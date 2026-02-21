@@ -1,0 +1,693 @@
+{
+  "dashboard": {
+    "title": "BrandPulse Dashboard",
+    "description": "A brand health intelligence dashboard displaying KPIs, sentiment, awareness, competitor tracking, SEO performance, and AI-generated recommendations.",
+    "sections": [
+
+      {
+        "id": "kpi_cards",
+        "title": "Top KPI Cards",
+        "description": "Five animated metric cards at the top of the dashboard — one per brand health category. Each card counts up from zero on first render and shows a month-over-month delta.",
+        "visualization": "MetricCard (animated count-up, IntersectionObserver trigger)",
+        "dataSource": "metrics[]",
+        "fields": [
+          {
+            "name": "label",
+            "type": "string",
+            "description": "Display name shown above the value.",
+            "example": "Brand Score"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "description": "Current numeric value of the metric.",
+            "example": 87
+          },
+          {
+            "name": "suffix",
+            "type": "string | undefined",
+            "description": "Unit string appended to the value (e.g. '%', '/100', 'M').",
+            "example": "/100"
+          },
+          {
+            "name": "prefix",
+            "type": "string | undefined",
+            "description": "String prepended to the value. Currently unused but supported.",
+            "example": ""
+          },
+          {
+            "name": "change",
+            "type": "number",
+            "description": "Month-over-month percentage change. Positive = green arrow up, negative = red arrow down.",
+            "example": 4.2,
+            "unit": "%"
+          },
+          {
+            "name": "icon",
+            "type": "LucideIcon",
+            "description": "Lucide icon component rendered inside the card badge.",
+            "example": "Star"
+          },
+          {
+            "name": "format",
+            "type": "((n: number) => string) | undefined",
+            "description": "Optional formatter applied to the value before display (e.g. toLocaleString for thousands separators).",
+            "example": "(n) => n.toLocaleString()"
+          }
+        ],
+        "records": [
+          { "label": "Brand Score",        "value": 87, "suffix": "/100", "change":  4.2 },
+          { "label": "Brand Awareness",    "value": 78, "suffix": "%",    "change":  6.3 },
+          { "label": "NPS Score",          "value": 58, "suffix": null,   "change":  5.8 },
+          { "label": "Positive Sentiment", "value": 92, "suffix": "%",    "change":  2.1 },
+          { "label": "Audience Reach",     "value": 24, "suffix": "M",    "change": -3.1 }
+        ]
+      },
+
+      {
+        "id": "mentions_reach_trend",
+        "title": "Mentions & Reach Trend",
+        "description": "Dual area chart showing total brand mentions and total audience reach over the last 7 months. Displayed as two overlapping gradient-filled areas.",
+        "visualization": "Recharts AreaChart (two Area series)",
+        "dataSource": "trendData[]",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "Abbreviated month label used on the X-axis.",
+            "example": "Jan"
+          },
+          {
+            "name": "mentions",
+            "type": "number",
+            "description": "Total number of times the brand was mentioned across all monitored channels in that month.",
+            "example": 2400,
+            "unit": "count"
+          },
+          {
+            "name": "sentiment",
+            "type": "number",
+            "description": "Overall sentiment score for the month (0–100). Stored but currently not plotted on this chart.",
+            "example": 78,
+            "unit": "score (0–100)"
+          },
+          {
+            "name": "reach",
+            "type": "number",
+            "description": "Estimated total audience reached by brand mentions in that month (sum of follower/subscriber counts of posters).",
+            "example": 180000,
+            "unit": "people"
+          }
+        ]
+      },
+
+      {
+        "id": "sentiment_breakdown",
+        "title": "Sentiment Breakdown",
+        "description": "Donut chart showing the overall split of positive, neutral, and negative brand mentions.",
+        "visualization": "Recharts PieChart (innerRadius donut)",
+        "dataSource": "sentimentPie[]",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "Sentiment category label.",
+            "example": "Positive",
+            "enum": ["Positive", "Neutral", "Negative"]
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "description": "Percentage share of total mentions that fall into this sentiment category.",
+            "example": 68,
+            "unit": "%"
+          },
+          {
+            "name": "color",
+            "type": "string",
+            "description": "HSL color string used to fill the donut segment and the legend dot.",
+            "example": "hsl(172, 80%, 42%)"
+          }
+        ]
+      },
+
+      {
+        "id": "channel_distribution",
+        "title": "By Channel",
+        "description": "Animated horizontal progress bars showing the percentage of brand mentions originating from each social/media channel.",
+        "visualization": "Animated progress bars (framer-motion width transition)",
+        "dataSource": "channelData[]",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "Channel or platform name.",
+            "example": "Instagram"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "description": "Percentage of total brand mentions from this channel.",
+            "example": 38,
+            "unit": "%"
+          }
+        ]
+      },
+
+      {
+        "id": "brand_awareness",
+        "title": "Brand Awareness",
+        "description": "Awareness funnel showing four stages from total target audience down to top-of-mind recall. Rendered as animated horizontal bars of decreasing width plus a three-stat summary row.",
+        "visualization": "Animated funnel bars (framer-motion) + summary stat tiles",
+        "dataSource": "awarenessFunnel[]",
+        "fields": [
+          {
+            "name": "label",
+            "type": "string",
+            "description": "Name of the funnel stage.",
+            "example": "Aided Recognition",
+            "enum": ["Target Audience", "Aided Recognition", "Unaided Recall", "Top-of-Mind"]
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "description": "Percentage of the target population that falls into this awareness stage. Decreases as the funnel narrows.",
+            "example": 78,
+            "unit": "%"
+          },
+          {
+            "name": "bar",
+            "type": "string",
+            "description": "Tailwind CSS class applied to the animated bar to control its fill color/opacity.",
+            "example": "bg-primary/40"
+          }
+        ],
+        "summary_stats": [
+          { "label": "Aided Recognition", "value": "78%", "description": "Know brand when prompted" },
+          { "label": "Unaided Recall",    "value": "45%", "description": "Recall brand spontaneously" },
+          { "label": "Top-of-Mind",       "value": "23%", "description": "First brand recalled" }
+        ]
+      },
+
+      {
+        "id": "brand_sentiment_reputation",
+        "title": "Brand Sentiment & Reputation",
+        "description": "Stacked horizontal bars showing positive, neutral, and negative sentiment percentages broken down by data source (social media, reviews, surveys, news).",
+        "visualization": "Stacked segmented bars (inline CSS width)",
+        "dataSource": "platformSentiment[]",
+        "fields": [
+          {
+            "name": "platform",
+            "type": "string",
+            "description": "The data source from which sentiment was measured.",
+            "example": "Social Media",
+            "enum": ["Social Media", "Reviews", "Surveys", "News"]
+          },
+          {
+            "name": "positive",
+            "type": "number",
+            "description": "Percentage of mentions/responses from this source classified as positive sentiment.",
+            "example": 72,
+            "unit": "%"
+          },
+          {
+            "name": "neutral",
+            "type": "number",
+            "description": "Percentage of mentions/responses from this source classified as neutral sentiment.",
+            "example": 20,
+            "unit": "%"
+          },
+          {
+            "name": "negative",
+            "type": "number",
+            "description": "Percentage of mentions/responses from this source classified as negative sentiment.",
+            "example": 8,
+            "unit": "% (positive + neutral + negative = 100)"
+          }
+        ]
+      },
+
+      {
+        "id": "brand_usage_consideration",
+        "title": "Brand Usage & Consideration",
+        "description": "Grouped bar chart comparing the percentage of each age segment that currently uses the brand versus those who would consider purchasing in future.",
+        "visualization": "Recharts BarChart (two grouped Bar series)",
+        "dataSource": "usageConsiderationData[]",
+        "fields": [
+          {
+            "name": "segment",
+            "type": "string",
+            "description": "Age demographic segment displayed on the X-axis.",
+            "example": "25–34"
+          },
+          {
+            "name": "usage",
+            "type": "number",
+            "description": "Percentage of this age segment that currently uses the brand's products/services.",
+            "example": 58,
+            "unit": "%"
+          },
+          {
+            "name": "consideration",
+            "type": "number",
+            "description": "Percentage of this age segment that would consider purchasing the brand in the future.",
+            "example": 74,
+            "unit": "%"
+          }
+        ]
+      },
+
+      {
+        "id": "brand_associations_positioning",
+        "title": "Brand Associations & Positioning",
+        "description": "Radar (spider) chart plotting your brand score against the top competitor across six brand attribute dimensions.",
+        "visualization": "Recharts RadarChart (two Radar series)",
+        "dataSource": "associationData[]",
+        "fields": [
+          {
+            "name": "attribute",
+            "type": "string",
+            "description": "Brand attribute dimension shown on the radar axis label.",
+            "example": "Quality",
+            "enum": ["Quality", "Innovation", "Trust", "Value", "Sustain.", "Support"]
+          },
+          {
+            "name": "brand",
+            "type": "number",
+            "description": "Score for BrandPulse (your brand) on this attribute, from consumer perception research.",
+            "example": 82,
+            "unit": "score (0–100)"
+          },
+          {
+            "name": "competitor",
+            "type": "number",
+            "description": "Score for the top competitor on this attribute.",
+            "example": 75,
+            "unit": "score (0–100)"
+          }
+        ]
+      },
+
+      {
+        "id": "customer_loyalty_nps",
+        "title": "Customer Loyalty & Advocacy",
+        "description": "Net Promoter Score (NPS) panel showing the composite score, a color-coded stacked bar, and the underlying promoter / passive / detractor percentage breakdown.",
+        "visualization": "Large score display + stacked bar (inline CSS) + stat tiles",
+        "dataSource": "npsScore (number) + npsBreakdown[]",
+        "fields": {
+          "npsScore": {
+            "type": "number",
+            "description": "Composite NPS = Promoters% − Detractors%. Ranges from −100 to 100. Displayed as the hero number.",
+            "example": 58,
+            "formula": "Promoters% - Detractors%"
+          },
+          "npsBreakdown": [
+            {
+              "name": "name",
+              "type": "string",
+              "description": "NPS respondent category.",
+              "example": "Promoters",
+              "enum": ["Promoters", "Passives", "Detractors"]
+            },
+            {
+              "name": "value",
+              "type": "number",
+              "description": "Percentage of total survey respondents in this category.",
+              "example": 68,
+              "unit": "%"
+            },
+            {
+              "name": "color",
+              "type": "string",
+              "description": "HSL color used for this segment in the stacked bar.",
+              "example": "hsl(172, 80%, 42%)"
+            }
+          ]
+        },
+        "metadata": {
+          "survey_responses": 3241,
+          "update_frequency": "monthly",
+          "industry_average_nps": 32
+        }
+      },
+
+      {
+        "id": "competitor_tracking",
+        "title": "Competitor Tracking",
+        "description": "Three-part section: a multi-line brand score trend chart, a share-of-voice donut chart, and a full comparison table across all tracked competitors.",
+        "subsections": {
+
+          "brand_score_trend": {
+            "title": "Brand Score Over Time",
+            "description": "Line chart showing monthly brand score (0–100) for your brand and three competitors over seven months. Your brand is solid-lined; competitors use dashed lines.",
+            "visualization": "Recharts LineChart (four Line series)",
+            "dataSource": "competitorTrendData[]",
+            "fields": [
+              {
+                "name": "month",
+                "type": "string",
+                "description": "Abbreviated month label for the X-axis.",
+                "example": "Jan"
+              },
+              {
+                "name": "brandpulse",
+                "type": "number",
+                "description": "BrandPulse brand score for this month.",
+                "example": 87,
+                "unit": "score (0–100)"
+              },
+              {
+                "name": "brandwatch",
+                "type": "number",
+                "description": "Brandwatch brand score for this month.",
+                "example": 79,
+                "unit": "score (0–100)"
+              },
+              {
+                "name": "sprout",
+                "type": "number",
+                "description": "Sprout Social brand score for this month.",
+                "example": 74,
+                "unit": "score (0–100)"
+              },
+              {
+                "name": "hootsuite",
+                "type": "number",
+                "description": "Hootsuite brand score for this month.",
+                "example": 71,
+                "unit": "score (0–100)"
+              }
+            ]
+          },
+
+          "share_of_voice": {
+            "title": "Share of Voice",
+            "description": "Donut chart showing each brand's proportion of total monitored mentions across all channels.",
+            "visualization": "Recharts PieChart (innerRadius donut)",
+            "dataSource": "shareOfVoice[]",
+            "fields": [
+              {
+                "name": "name",
+                "type": "string",
+                "description": "Brand name.",
+                "example": "BrandPulse"
+              },
+              {
+                "name": "value",
+                "type": "number",
+                "description": "This brand's percentage of total cross-competitor mention volume.",
+                "example": 38,
+                "unit": "% (all values sum to 100)"
+              },
+              {
+                "name": "color",
+                "type": "string",
+                "description": "HSL color used for this brand's donut segment and legend.",
+                "example": "hsl(172, 80%, 42%)"
+              }
+            ]
+          },
+
+          "competitor_snapshot_table": {
+            "title": "Competitor Snapshot",
+            "description": "Side-by-side comparison table with one row per brand. The first row is always your own brand (highlighted with a 'You' badge).",
+            "visualization": "HTML table",
+            "dataSource": "competitors[]",
+            "fields": [
+              {
+                "name": "name",
+                "type": "string",
+                "description": "Brand name.",
+                "example": "BrandPulse"
+              },
+              {
+                "name": "score",
+                "type": "number",
+                "description": "Composite brand health score.",
+                "example": 87,
+                "unit": "score (0–100)"
+              },
+              {
+                "name": "mentions",
+                "type": "number",
+                "description": "Total brand mentions in the current period.",
+                "example": 12483,
+                "unit": "count"
+              },
+              {
+                "name": "sentiment",
+                "type": "number",
+                "description": "Positive sentiment percentage across all monitored sources.",
+                "example": 92,
+                "unit": "%"
+              },
+              {
+                "name": "nps",
+                "type": "number",
+                "description": "Net Promoter Score for this brand.",
+                "example": 58,
+                "unit": "score (−100 to 100)"
+              },
+              {
+                "name": "awareness",
+                "type": "number",
+                "description": "Aided brand awareness percentage among the target market.",
+                "example": 78,
+                "unit": "%"
+              },
+              {
+                "name": "change",
+                "type": "number",
+                "description": "Month-over-month change in brand score. Positive = improvement (green arrow up), negative = decline (red arrow down).",
+                "example": 4.2,
+                "unit": "%"
+              },
+              {
+                "name": "color",
+                "type": "string",
+                "description": "HSL color used as the brand's color indicator dot in the table and charts.",
+                "example": "hsl(172, 80%, 42%)"
+              }
+            ]
+          }
+        }
+      },
+
+      {
+        "id": "seo_performance",
+        "title": "SEO Performance",
+        "description": "Three-part section covering organic traffic trends, SEO health KPIs, and a ranked keyword table.",
+        "subsections": {
+
+          "organic_traffic_trend": {
+            "title": "Organic Traffic Trend",
+            "description": "Dual area chart splitting monthly organic sessions into branded (users who searched for your brand by name) and non-branded (users who found you via generic category keywords).",
+            "visualization": "Recharts AreaChart (two Area series)",
+            "dataSource": "seoTrafficData[]",
+            "fields": [
+              {
+                "name": "month",
+                "type": "string",
+                "description": "Abbreviated month label for the X-axis.",
+                "example": "Jan"
+              },
+              {
+                "name": "branded",
+                "type": "number",
+                "description": "Monthly organic sessions driven by branded search queries (e.g. 'BrandPulse', 'BrandPulse pricing').",
+                "example": 18000,
+                "unit": "sessions"
+              },
+              {
+                "name": "nonBranded",
+                "type": "number",
+                "description": "Monthly organic sessions driven by generic/category search queries (e.g. 'brand tracking software').",
+                "example": 24000,
+                "unit": "sessions"
+              }
+            ]
+          },
+
+          "seo_health_kpis": {
+            "title": "SEO Health",
+            "description": "Four static KPI cards summarising the brand's SEO authority and index footprint.",
+            "visualization": "Stat cards with icon, value, sub-label, and change badge",
+            "fields": [
+              {
+                "name": "domainAuthority",
+                "type": "number",
+                "description": "Moz/Ahrefs-style domain authority score (0–100) indicating overall link equity and trustworthiness.",
+                "value": 68,
+                "change": "+3 pts",
+                "unit": "score (0–100)"
+              },
+              {
+                "name": "backlinks",
+                "type": "string",
+                "description": "Total number of referring domains linking to the site. Displayed in abbreviated form.",
+                "value": "14.2k",
+                "change": "+840"
+              },
+              {
+                "name": "keywordsInTop10",
+                "type": "number",
+                "description": "Number of keywords for which the brand ranks in positions 1–10 on Google.",
+                "value": 284,
+                "change": "+31",
+                "unit": "keywords"
+              },
+              {
+                "name": "indexedPages",
+                "type": "number",
+                "description": "Total number of site pages currently indexed by Google.",
+                "value": 847,
+                "change": "+22",
+                "unit": "pages"
+              }
+            ]
+          },
+
+          "top_keywords_table": {
+            "title": "Top Ranking Keywords",
+            "description": "Table of the brand's highest-value ranking keywords, sorted by estimated organic traffic. Position badges are highlighted for top-3 rankings.",
+            "visualization": "HTML table with position badge and directional change indicator",
+            "dataSource": "topKeywords[]",
+            "fields": [
+              {
+                "name": "keyword",
+                "type": "string",
+                "description": "The search query for which the brand ranks.",
+                "example": "brand tracking software"
+              },
+              {
+                "name": "position",
+                "type": "number",
+                "description": "Current Google organic ranking position (1 = top result). Positions 1–3 are highlighted in the UI.",
+                "example": 1,
+                "unit": "rank (lower is better)"
+              },
+              {
+                "name": "change",
+                "type": "number",
+                "description": "Change in position since last period. Positive = moved up (improved), negative = moved down (declined), 0 = unchanged. Note: lower position number = higher ranking, so +3 means gained 3 spots.",
+                "example": 3,
+                "unit": "positions"
+              },
+              {
+                "name": "volume",
+                "type": "number",
+                "description": "Average monthly Google search volume for this keyword.",
+                "example": 8400,
+                "unit": "searches/month"
+              },
+              {
+                "name": "traffic",
+                "type": "number",
+                "description": "Estimated monthly organic sessions driven by this keyword based on position CTR and search volume.",
+                "example": 4200,
+                "unit": "sessions/month"
+              }
+            ]
+          }
+        }
+      },
+
+      {
+        "id": "live_mentions_feed",
+        "title": "Live Mentions",
+        "description": "Chronological feed of the most recent brand mentions detected across monitored platforms. Animated in staggered sequence on load.",
+        "visualization": "List of mention cards with platform avatar, sentiment badge, and truncated text",
+        "dataSource": "recentMentions[]",
+        "fields": [
+          {
+            "name": "platform",
+            "type": "string",
+            "description": "Platform or channel where the mention was detected.",
+            "example": "Twitter/X",
+            "enum": ["Twitter/X", "LinkedIn", "Reddit", "Google", "Instagram", "News"]
+          },
+          {
+            "name": "user",
+            "type": "string",
+            "description": "Username, handle, or display name of the person who made the mention.",
+            "example": "@techcrunch"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "description": "Full text of the mention. Truncated with CSS ellipsis in the card.",
+            "example": "BrandPulse is revolutionizing how companies track their online reputation..."
+          },
+          {
+            "name": "sentiment",
+            "type": "string",
+            "description": "AI-classified sentiment of the mention.",
+            "example": "positive",
+            "enum": ["positive", "neutral", "negative"]
+          },
+          {
+            "name": "time",
+            "type": "string",
+            "description": "Human-readable relative timestamp of the mention.",
+            "example": "2m ago"
+          }
+        ]
+      },
+
+      {
+        "id": "ai_suggestions",
+        "title": "AI Recommendations",
+        "description": "Grid of AI-generated action cards ranked by priority. Clicking a card expands it and triggers a character-by-character typing animation on the description text.",
+        "visualization": "Expandable cards (framer-motion AnimatePresence) with typing effect",
+        "dataSource": "suggestions[] (AISuggestionsPanel.tsx)",
+        "fields": [
+          {
+            "name": "priority",
+            "type": "string",
+            "description": "Urgency level of the recommendation. Controls border color, badge color, and glow effect.",
+            "example": "critical",
+            "enum": ["critical", "high", "medium", "low"]
+          },
+          {
+            "name": "icon",
+            "type": "LucideIcon",
+            "description": "Lucide icon rendered inside the priority badge.",
+            "example": "Zap"
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "description": "Short headline for the recommendation.",
+            "example": "Capitalize on Viral Mention"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "Detailed explanation of the insight and recommended action. Revealed with a typing animation when the card is expanded.",
+            "example": "Tech influencer @sarahdev (450K followers) mentioned your product positively 2 hours ago..."
+          },
+          {
+            "name": "impact",
+            "type": "string",
+            "description": "Projected impact metric displayed in the top-right corner of the card.",
+            "example": "+25K reach"
+          },
+          {
+            "name": "impactColor",
+            "type": "string",
+            "description": "Tailwind CSS class controlling the color of the impact label.",
+            "example": "text-primary",
+            "enum": ["text-primary", "text-gradient-warm", "text-gradient-accent"]
+          },
+          {
+            "name": "action",
+            "type": "string",
+            "description": "Label for the CTA button at the bottom of the card.",
+            "example": "Engage Now"
+          }
+        ]
+      }
+
+    ]
+  }
+}
