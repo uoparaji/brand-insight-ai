@@ -12,6 +12,12 @@ import {
   Heart,
   ShoppingCart,
   Target,
+  Trophy,
+  Globe2,
+  Link2,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -33,6 +39,8 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Legend,
+  LineChart,
+  Line,
 } from "recharts";
 import { type LucideIcon } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
@@ -120,6 +128,53 @@ const npsBreakdown = [
   { name: "Promoters",  value: 68, color: "hsl(172, 80%, 42%)" },
   { name: "Passives",   value: 22, color: "hsl(222, 25%, 38%)" },
   { name: "Detractors", value: 10, color: "hsl(0, 72%, 51%)" },
+];
+
+// ── Competitor Tracking ──────────────────────────────────────────────────────
+
+const competitors = [
+  { name: "BrandPulse",    score: 87, mentions: 12483, sentiment: 92, nps: 58, awareness: 78, change: 4.2,  color: "hsl(172, 80%, 42%)" },
+  { name: "Brandwatch",    score: 79, mentions:  9821, sentiment: 84, nps: 41, awareness: 65, change: 1.8,  color: "hsl(260, 60%, 55%)" },
+  { name: "Sprout Social", score: 74, mentions:  8204, sentiment: 81, nps: 38, awareness: 59, change: -0.9, color: "hsl(38, 92%, 50%)" },
+  { name: "Hootsuite",     score: 71, mentions: 11234, sentiment: 76, nps: 29, awareness: 72, change: -2.1, color: "hsl(200, 80%, 50%)" },
+];
+
+const shareOfVoice = [
+  { name: "BrandPulse",    value: 38, color: "hsl(172, 80%, 42%)" },
+  { name: "Brandwatch",    value: 28, color: "hsl(260, 60%, 55%)" },
+  { name: "Sprout Social", value: 20, color: "hsl(38, 92%, 50%)" },
+  { name: "Hootsuite",     value: 14, color: "hsl(200, 80%, 50%)" },
+];
+
+const competitorTrendData = [
+  { month: "Jan", brandpulse: 72, brandwatch: 68, sprout: 65, hootsuite: 61 },
+  { month: "Feb", brandpulse: 75, brandwatch: 70, sprout: 67, hootsuite: 63 },
+  { month: "Mar", brandpulse: 74, brandwatch: 71, sprout: 68, hootsuite: 62 },
+  { month: "Apr", brandpulse: 79, brandwatch: 72, sprout: 69, hootsuite: 64 },
+  { month: "May", brandpulse: 83, brandwatch: 74, sprout: 71, hootsuite: 65 },
+  { month: "Jun", brandpulse: 85, brandwatch: 76, sprout: 72, hootsuite: 66 },
+  { month: "Jul", brandpulse: 87, brandwatch: 79, sprout: 74, hootsuite: 71 },
+];
+
+// ── SEO Performance ──────────────────────────────────────────────────────────
+
+const seoTrafficData = [
+  { month: "Jan", branded: 18000, nonBranded: 24000 },
+  { month: "Feb", branded: 20000, nonBranded: 27000 },
+  { month: "Mar", branded: 19000, nonBranded: 26000 },
+  { month: "Apr", branded: 23000, nonBranded: 29000 },
+  { month: "May", branded: 25000, nonBranded: 33000 },
+  { month: "Jun", branded: 27000, nonBranded: 36000 },
+  { month: "Jul", branded: 31000, nonBranded: 40000 },
+];
+
+const topKeywords = [
+  { keyword: "brand tracking software",    position: 1,  volume: 8400, change:  0, traffic: 4200 },
+  { keyword: "brand monitoring tool",      position: 2,  volume: 6200, change: +1, traffic: 2800 },
+  { keyword: "brand sentiment analysis",   position: 3,  volume: 5100, change: -1, traffic: 2100 },
+  { keyword: "competitor brand analysis",  position: 5,  volume: 4800, change: +3, traffic: 1440 },
+  { keyword: "social media brand tracker", position: 7,  volume: 3900, change: +2, traffic: 1050 },
+  { keyword: "NPS tracking dashboard",     position: 12, volume: 2600, change: -2, traffic:  520 },
 ];
 
 // ── Top-level KPI cards (one per health category) ───────────────────────────
@@ -549,6 +604,278 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground mt-4 text-center">
               Based on 3,241 survey responses · Updated monthly
             </p>
+          </motion.div>
+        </div>
+
+        {/* ── Competitor Tracking ─────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="flex items-center gap-3"
+          >
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Trophy className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Competitor Tracking</h3>
+              <p className="text-xs text-muted-foreground">Brand score trend & share of voice vs. top competitors</p>
+            </div>
+          </motion.div>
+
+          {/* Trend + Share of Voice */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.5 }}
+              className="lg:col-span-2 bg-gradient-card rounded-xl border border-border/40 p-6 glow-border"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h4 className="font-medium text-foreground">Brand Score Over Time</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">Last 7 months</p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  {[
+                    { label: "BrandPulse",    color: "hsl(172, 80%, 42%)" },
+                    { label: "Brandwatch",    color: "hsl(260, 60%, 55%)" },
+                    { label: "Sprout Social", color: "hsl(38, 92%, 50%)" },
+                    { label: "Hootsuite",     color: "hsl(200, 80%, 50%)" },
+                  ].map((c) => (
+                    <span key={c.label} className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+                      {c.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={competitorTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 25%, 15%)" />
+                  <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[55, 95]} tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Line dataKey="brandpulse" name="BrandPulse"    stroke="hsl(172, 80%, 42%)" strokeWidth={2.5} dot={false} />
+                  <Line dataKey="brandwatch" name="Brandwatch"    stroke="hsl(260, 60%, 55%)" strokeWidth={2}   dot={false} strokeDasharray="4 2" />
+                  <Line dataKey="sprout"     name="Sprout Social" stroke="hsl(38, 92%, 50%)"  strokeWidth={2}   dot={false} strokeDasharray="4 2" />
+                  <Line dataKey="hootsuite"  name="Hootsuite"     stroke="hsl(200, 80%, 50%)" strokeWidth={2}   dot={false} strokeDasharray="4 2" />
+                </LineChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Share of Voice */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="bg-gradient-card rounded-xl border border-border/40 p-6 glow-border"
+            >
+              <h4 className="font-medium text-foreground mb-1">Share of Voice</h4>
+              <p className="text-xs text-muted-foreground mb-3">Mention share across channels</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={shareOfVoice} cx="50%" cy="50%" innerRadius={45} outerRadius={65} dataKey="value" strokeWidth={0}>
+                    {shareOfVoice.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2 mt-2">
+                {shareOfVoice.map((s) => (
+                  <div key={s.name} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: s.color }} />
+                      {s.name}
+                    </span>
+                    <span className="font-medium text-foreground">{s.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Competitor table */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="bg-gradient-card rounded-xl border border-border/40 p-6 glow-border overflow-x-auto"
+          >
+            <h4 className="font-medium text-foreground mb-5">Competitor Snapshot</h4>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border/30">
+                  <th className="text-left pb-3 font-medium">Brand</th>
+                  <th className="text-right pb-3 font-medium">Score</th>
+                  <th className="text-right pb-3 font-medium">Mentions</th>
+                  <th className="text-right pb-3 font-medium">Sentiment</th>
+                  <th className="text-right pb-3 font-medium">NPS</th>
+                  <th className="text-right pb-3 font-medium">Awareness</th>
+                  <th className="text-right pb-3 font-medium">MoM</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/20">
+                {competitors.map((c, i) => (
+                  <tr key={c.name} className={i === 0 ? "text-foreground" : "text-muted-foreground"}>
+                    <td className="py-3 flex items-center gap-2.5">
+                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                      <span className={`font-medium ${i === 0 ? "text-foreground" : ""}`}>{c.name}</span>
+                      {i === 0 && <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-medium">You</span>}
+                    </td>
+                    <td className="py-3 text-right font-semibold" style={{ color: i === 0 ? c.color : undefined }}>{c.score}</td>
+                    <td className="py-3 text-right">{c.mentions.toLocaleString()}</td>
+                    <td className="py-3 text-right">{c.sentiment}%</td>
+                    <td className="py-3 text-right">{c.nps}</td>
+                    <td className="py-3 text-right">{c.awareness}%</td>
+                    <td className="py-3 text-right">
+                      <span className={`inline-flex items-center gap-0.5 font-medium ${c.change > 0 ? "text-primary" : c.change < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {c.change > 0 ? <ArrowUp className="h-3 w-3" /> : c.change < 0 ? <ArrowDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                        {Math.abs(c.change)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        </div>
+
+        {/* ── SEO Performance ──────────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="flex items-center gap-3"
+          >
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Globe2 className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">SEO Performance</h3>
+              <p className="text-xs text-muted-foreground">Organic visibility, keyword rankings & branded traffic</p>
+            </div>
+          </motion.div>
+
+          {/* Traffic trend + SEO KPIs */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.5 }}
+              className="lg:col-span-2 bg-gradient-card rounded-xl border border-border/40 p-6 glow-border"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h4 className="font-medium text-foreground">Organic Traffic Trend</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">Branded vs. non-branded sessions</p>
+                </div>
+                <div className="flex gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Branded</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" /> Non-branded</span>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={seoTrafficData}>
+                  <defs>
+                    <linearGradient id="brandedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(172, 80%, 42%)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(172, 80%, 42%)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="nonBrandedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(260, 60%, 55%)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="hsl(260, 60%, 55%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 25%, 15%)" />
+                  <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => v.toLocaleString()} />
+                  <Area type="monotone" dataKey="branded"    name="Branded"     stroke="hsl(172, 80%, 42%)" fill="url(#brandedGrad)"    strokeWidth={2.5} dot={false} />
+                  <Area type="monotone" dataKey="nonBranded" name="Non-branded" stroke="hsl(260, 60%, 55%)" fill="url(#nonBrandedGrad)" strokeWidth={2}   dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* SEO KPIs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="bg-gradient-card rounded-xl border border-border/40 p-6 glow-border space-y-4"
+            >
+              <h4 className="font-medium text-foreground">SEO Health</h4>
+              {[
+                { label: "Domain Authority",  value: "68",    sub: "out of 100", icon: Globe2,  change: "+3 pts" },
+                { label: "Backlinks",         value: "14.2k", sub: "total referring domains", icon: Link2,  change: "+840" },
+                { label: "Keywords in Top 10",value: "284",   sub: "ranking keywords", icon: Search, change: "+31" },
+                { label: "Indexed Pages",     value: "847",   sub: "pages in Google", icon: Globe,  change: "+22" },
+              ].map((kpi) => (
+                <div key={kpi.label} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <kpi.icon className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{kpi.label}</span>
+                      <span className="text-xs text-primary font-medium">{kpi.change}</span>
+                    </div>
+                    <p className="text-lg font-bold text-foreground leading-tight">{kpi.value}</p>
+                    <p className="text-[10px] text-muted-foreground">{kpi.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Top keywords table */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65, duration: 0.5 }}
+            className="bg-gradient-card rounded-xl border border-border/40 p-6 glow-border overflow-x-auto"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h4 className="font-medium text-foreground">Top Ranking Keywords</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">Branded & category keywords · Google Search</p>
+              </div>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border/30">
+                  <th className="text-left pb-3 font-medium">Keyword</th>
+                  <th className="text-right pb-3 font-medium">Position</th>
+                  <th className="text-right pb-3 font-medium">Change</th>
+                  <th className="text-right pb-3 font-medium">Monthly Volume</th>
+                  <th className="text-right pb-3 font-medium">Est. Traffic</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/20">
+                {topKeywords.map((kw) => (
+                  <tr key={kw.keyword} className="text-muted-foreground hover:text-foreground transition-colors">
+                    <td className="py-3 font-medium text-foreground">{kw.keyword}</td>
+                    <td className="py-3 text-right">
+                      <span className={`inline-flex items-center justify-center h-6 w-6 rounded-md text-xs font-bold ${kw.position <= 3 ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
+                        {kw.position}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${kw.change > 0 ? "text-primary" : kw.change < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {kw.change > 0 ? <ArrowUp className="h-3 w-3" /> : kw.change < 0 ? <ArrowDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                        {kw.change !== 0 ? Math.abs(kw.change) : "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">{kw.volume.toLocaleString()}</td>
+                    <td className="py-3 text-right text-foreground font-medium">{kw.traffic.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </motion.div>
         </div>
 
