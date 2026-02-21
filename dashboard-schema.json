@@ -1,693 +1,729 @@
 {
-  "dashboard": {
-    "title": "BrandPulse Dashboard",
-    "description": "A brand health intelligence dashboard displaying KPIs, sentiment, awareness, competitor tracking, SEO performance, and AI-generated recommendations.",
-    "sections": [
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$instructions": "You are generating a complete data payload for the BrandPulse brand intelligence dashboard. Given a brand name, industry, and any performance context, populate every field according to its description and constraints. All values must be internally consistent: NPS equals promoters minus detractors, all sentiment splits must sum to 100, share of voice must sum to 100, awareness funnel values must decrease from 100 down to top-of-mind, and monthly trend arrays must follow a plausible trajectory. Return the entire object — do not omit any required field.",
 
-      {
-        "id": "kpi_cards",
-        "title": "Top KPI Cards",
-        "description": "Five animated metric cards at the top of the dashboard — one per brand health category. Each card counts up from zero on first render and shows a month-over-month delta.",
-        "visualization": "MetricCard (animated count-up, IntersectionObserver trigger)",
-        "dataSource": "metrics[]",
-        "fields": [
-          {
-            "name": "label",
+  "$consistency_rules": [
+    "nps.score must equal nps.breakdown[Promoters].value minus nps.breakdown[Detractors].value",
+    "nps.breakdown values (Promoters + Passives + Detractors) must sum to 100",
+    "sentiment_overview items must sum to 100",
+    "platform_sentiment rows: positive + neutral + negative must equal 100 for each platform",
+    "share_of_voice values must sum to 100",
+    "awareness.funnel values must be strictly decreasing: target_audience (100) > aided_recognition > unaided_recall > top_of_mind",
+    "competitors[0] must always represent the client brand (is_client: true)",
+    "seo.traffic_trend branded + nonBranded values should grow or stay stable over the period — no sudden collapses unless context justifies it",
+    "kpi_cards[NPS Score].value must equal nps.score",
+    "kpi_cards[Brand Awareness].value must equal awareness.funnel[aided_recognition].value",
+    "kpi_cards[Positive Sentiment].value must equal sentiment_overview[Positive].value"
+  ],
+
+  "title": "BrandPulse Dashboard Dataset",
+  "description": "The complete data object that powers all charts, tables, and cards on the BrandPulse dashboard. Generate realistic, industry-appropriate values that tell a coherent story about the brand's health and market position.",
+  "type": "object",
+  "required": [
+    "meta",
+    "kpi_cards",
+    "trend",
+    "channels",
+    "sentiment_overview",
+    "brand_awareness",
+    "platform_sentiment",
+    "usage_consideration",
+    "brand_associations",
+    "nps",
+    "competitors",
+    "seo",
+    "mentions",
+    "ai_suggestions"
+  ],
+
+  "properties": {
+
+    "meta": {
+      "type": "object",
+      "description": "Contextual metadata about the brand and reporting period. Use these values when writing mention text, competitor names, and AI suggestion copy.",
+      "required": ["brand_name", "industry", "reporting_period", "currency_period"],
+      "properties": {
+        "brand_name": {
+          "type": "string",
+          "description": "The exact brand name being analysed. Used in mention text, competitor table labels, and AI suggestion copy."
+        },
+        "industry": {
+          "type": "string",
+          "description": "The brand's primary industry or vertical (e.g. 'SaaS', 'Retail', 'Fintech', 'Healthcare'). Use this to calibrate realistic benchmark values — e.g. average NPS for SaaS is ~35, for retail ~45."
+        },
+        "reporting_period": {
+          "type": "string",
+          "description": "Human-readable label for the current reporting window shown in chart subtitles.",
+          "examples": ["Last 7 months", "Q3 2025", "Jan–Jul 2025"]
+        },
+        "currency_period": {
+          "type": "string",
+          "description": "The most recent month label in all trend arrays. All 'name'/'month' arrays end with this value.",
+          "examples": ["Jul", "Sep", "Dec"]
+        }
+      }
+    },
+
+    "kpi_cards": {
+      "type": "array",
+      "description": "Exactly five metric cards displayed at the top of the dashboard — one per brand health pillar. Order must be: Brand Score, Brand Awareness, NPS Score, Positive Sentiment, Audience Reach. Values for Brand Awareness, NPS Score, and Positive Sentiment must match the corresponding values in brand_awareness, nps, and sentiment_overview respectively.",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["label", "value", "change", "icon"],
+        "properties": {
+          "label": {
             "type": "string",
-            "description": "Display name shown above the value.",
-            "example": "Brand Score"
+            "description": "Display name for the metric. Use one of the five fixed labels: 'Brand Score', 'Brand Awareness', 'NPS Score', 'Positive Sentiment', 'Audience Reach'."
           },
-          {
-            "name": "value",
+          "value": {
             "type": "number",
-            "description": "Current numeric value of the metric.",
-            "example": 87
+            "description": "Current numeric value. Brand Score: 0–100 composite. Brand Awareness: 0–100 (% aided recognition). NPS Score: −100 to 100. Positive Sentiment: 0–100 (%). Audience Reach: number in millions (e.g. 24 means 24M)."
           },
-          {
-            "name": "suffix",
-            "type": "string | undefined",
-            "description": "Unit string appended to the value (e.g. '%', '/100', 'M').",
-            "example": "/100"
-          },
-          {
-            "name": "prefix",
-            "type": "string | undefined",
-            "description": "String prepended to the value. Currently unused but supported.",
-            "example": ""
-          },
-          {
-            "name": "change",
-            "type": "number",
-            "description": "Month-over-month percentage change. Positive = green arrow up, negative = red arrow down.",
-            "example": 4.2,
-            "unit": "%"
-          },
-          {
-            "name": "icon",
-            "type": "LucideIcon",
-            "description": "Lucide icon component rendered inside the card badge.",
-            "example": "Star"
-          },
-          {
-            "name": "format",
-            "type": "((n: number) => string) | undefined",
-            "description": "Optional formatter applied to the value before display (e.g. toLocaleString for thousands separators).",
-            "example": "(n) => n.toLocaleString()"
-          }
-        ],
-        "records": [
-          { "label": "Brand Score",        "value": 87, "suffix": "/100", "change":  4.2 },
-          { "label": "Brand Awareness",    "value": 78, "suffix": "%",    "change":  6.3 },
-          { "label": "NPS Score",          "value": 58, "suffix": null,   "change":  5.8 },
-          { "label": "Positive Sentiment", "value": 92, "suffix": "%",    "change":  2.1 },
-          { "label": "Audience Reach",     "value": 24, "suffix": "M",    "change": -3.1 }
-        ]
-      },
-
-      {
-        "id": "mentions_reach_trend",
-        "title": "Mentions & Reach Trend",
-        "description": "Dual area chart showing total brand mentions and total audience reach over the last 7 months. Displayed as two overlapping gradient-filled areas.",
-        "visualization": "Recharts AreaChart (two Area series)",
-        "dataSource": "trendData[]",
-        "fields": [
-          {
-            "name": "name",
+          "suffix": {
             "type": "string",
-            "description": "Abbreviated month label used on the X-axis.",
-            "example": "Jan"
+            "description": "Unit appended after the value in the UI. Use '/100' for Brand Score, '%' for Brand Awareness and Positive Sentiment, null for NPS Score, 'M' for Audience Reach."
           },
-          {
-            "name": "mentions",
+          "change": {
             "type": "number",
-            "description": "Total number of times the brand was mentioned across all monitored channels in that month.",
-            "example": 2400,
-            "unit": "count"
+            "description": "Month-over-month percentage point change. Positive displays a green up-arrow, negative a red down-arrow. Range typically −15 to +20. Reflect the brand's narrative — a growing brand has mostly positive changes."
           },
-          {
-            "name": "sentiment",
-            "type": "number",
-            "description": "Overall sentiment score for the month (0–100). Stored but currently not plotted on this chart.",
-            "example": 78,
-            "unit": "score (0–100)"
-          },
-          {
-            "name": "reach",
-            "type": "number",
-            "description": "Estimated total audience reached by brand mentions in that month (sum of follower/subscriber counts of posters).",
-            "example": 180000,
-            "unit": "people"
+          "icon": {
+            "type": "string",
+            "description": "Lucide icon name for the card badge. Use 'Star' for Brand Score, 'Eye' for Brand Awareness, 'Heart' for NPS Score, 'TrendingUp' for Positive Sentiment, 'Users' for Audience Reach.",
+            "enum": ["Star", "Eye", "Heart", "TrendingUp", "Users"]
           }
-        ]
-      },
+        }
+      }
+    },
 
-      {
-        "id": "sentiment_breakdown",
-        "title": "Sentiment Breakdown",
-        "description": "Donut chart showing the overall split of positive, neutral, and negative brand mentions.",
-        "visualization": "Recharts PieChart (innerRadius donut)",
-        "dataSource": "sentimentPie[]",
-        "fields": [
-          {
-            "name": "name",
+    "trend": {
+      "type": "array",
+      "description": "Seven monthly data points for the Mentions & Reach Trend area chart. Values should show a plausible trajectory — steady growth, a dip, or a spike — not a flat line. The last entry corresponds to meta.currency_period.",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "required": ["name", "mentions", "sentiment", "reach"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Abbreviated 3-letter month label for the X-axis (e.g. 'Jan', 'Feb'). Seven consecutive months ending at meta.currency_period."
+          },
+          "mentions": {
+            "type": "number",
+            "description": "Total brand mentions across all monitored channels for this month. Realistic ranges: small brand 500–3000, mid-market 3000–15000, enterprise 15000–100000. Trend should vary ±20% month-to-month.",
+            "minimum": 100
+          },
+          "sentiment": {
+            "type": "number",
+            "description": "Overall positive sentiment score for this month (0–100). Should correlate loosely with the month's mentions volume — viral positive moments spike both.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "reach": {
+            "type": "number",
+            "description": "Estimated total audience reached by mentions this month (sum of posters' follower counts). Typically 10–100x the mentions count depending on influencer mix.",
+            "minimum": 1000
+          }
+        }
+      }
+    },
+
+    "channels": {
+      "type": "array",
+      "description": "Distribution of brand mentions by platform, shown as animated progress bars. Values must sum to 100. Include 4–6 platforms relevant to the brand's industry. Typical order: largest share first.",
+      "minItems": 3,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Platform or channel name. Common options: 'Instagram', 'Twitter/X', 'LinkedIn', 'News', 'Reddit', 'YouTube', 'TikTok', 'Facebook'. Choose platforms appropriate to the brand's audience."
+          },
+          "value": {
+            "type": "number",
+            "description": "Percentage share of total mentions from this platform. All values across the channels array must sum to exactly 100.",
+            "minimum": 1,
+            "maximum": 80
+          }
+        }
+      }
+    },
+
+    "sentiment_overview": {
+      "type": "array",
+      "description": "Three segments for the overall sentiment donut chart. Must contain exactly three items: Positive, Neutral, Negative. The three values must sum to 100. Positive is typically largest; Negative is typically smallest.",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["name", "value", "color"],
+        "properties": {
+          "name": {
             "type": "string",
             "description": "Sentiment category label.",
-            "example": "Positive",
             "enum": ["Positive", "Neutral", "Negative"]
           },
-          {
-            "name": "value",
+          "value": {
             "type": "number",
-            "description": "Percentage share of total mentions that fall into this sentiment category.",
-            "example": 68,
-            "unit": "%"
+            "description": "Percentage of total mentions classified in this category. Positive + Neutral + Negative must equal 100. A healthy brand: Positive 55–80, Neutral 15–35, Negative 3–15.",
+            "minimum": 1,
+            "maximum": 98
           },
-          {
-            "name": "color",
+          "color": {
             "type": "string",
-            "description": "HSL color string used to fill the donut segment and the legend dot.",
-            "example": "hsl(172, 80%, 42%)"
+            "description": "HSL color string for the donut segment. Use 'hsl(172, 80%, 42%)' for Positive, 'hsl(222, 25%, 30%)' for Neutral, 'hsl(0, 72%, 51%)' for Negative. Do not change these values."
           }
-        ]
-      },
+        }
+      }
+    },
 
-      {
-        "id": "channel_distribution",
-        "title": "By Channel",
-        "description": "Animated horizontal progress bars showing the percentage of brand mentions originating from each social/media channel.",
-        "visualization": "Animated progress bars (framer-motion width transition)",
-        "dataSource": "channelData[]",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string",
-            "description": "Channel or platform name.",
-            "example": "Instagram"
-          },
-          {
-            "name": "value",
-            "type": "number",
-            "description": "Percentage of total brand mentions from this channel.",
-            "example": 38,
-            "unit": "%"
-          }
-        ]
-      },
-
-      {
-        "id": "brand_awareness",
-        "title": "Brand Awareness",
-        "description": "Awareness funnel showing four stages from total target audience down to top-of-mind recall. Rendered as animated horizontal bars of decreasing width plus a three-stat summary row.",
-        "visualization": "Animated funnel bars (framer-motion) + summary stat tiles",
-        "dataSource": "awarenessFunnel[]",
-        "fields": [
-          {
-            "name": "label",
-            "type": "string",
-            "description": "Name of the funnel stage.",
-            "example": "Aided Recognition",
-            "enum": ["Target Audience", "Aided Recognition", "Unaided Recall", "Top-of-Mind"]
-          },
-          {
-            "name": "value",
-            "type": "number",
-            "description": "Percentage of the target population that falls into this awareness stage. Decreases as the funnel narrows.",
-            "example": 78,
-            "unit": "%"
-          },
-          {
-            "name": "bar",
-            "type": "string",
-            "description": "Tailwind CSS class applied to the animated bar to control its fill color/opacity.",
-            "example": "bg-primary/40"
-          }
-        ],
-        "summary_stats": [
-          { "label": "Aided Recognition", "value": "78%", "description": "Know brand when prompted" },
-          { "label": "Unaided Recall",    "value": "45%", "description": "Recall brand spontaneously" },
-          { "label": "Top-of-Mind",       "value": "23%", "description": "First brand recalled" }
-        ]
-      },
-
-      {
-        "id": "brand_sentiment_reputation",
-        "title": "Brand Sentiment & Reputation",
-        "description": "Stacked horizontal bars showing positive, neutral, and negative sentiment percentages broken down by data source (social media, reviews, surveys, news).",
-        "visualization": "Stacked segmented bars (inline CSS width)",
-        "dataSource": "platformSentiment[]",
-        "fields": [
-          {
-            "name": "platform",
-            "type": "string",
-            "description": "The data source from which sentiment was measured.",
-            "example": "Social Media",
-            "enum": ["Social Media", "Reviews", "Surveys", "News"]
-          },
-          {
-            "name": "positive",
-            "type": "number",
-            "description": "Percentage of mentions/responses from this source classified as positive sentiment.",
-            "example": 72,
-            "unit": "%"
-          },
-          {
-            "name": "neutral",
-            "type": "number",
-            "description": "Percentage of mentions/responses from this source classified as neutral sentiment.",
-            "example": 20,
-            "unit": "%"
-          },
-          {
-            "name": "negative",
-            "type": "number",
-            "description": "Percentage of mentions/responses from this source classified as negative sentiment.",
-            "example": 8,
-            "unit": "% (positive + neutral + negative = 100)"
-          }
-        ]
-      },
-
-      {
-        "id": "brand_usage_consideration",
-        "title": "Brand Usage & Consideration",
-        "description": "Grouped bar chart comparing the percentage of each age segment that currently uses the brand versus those who would consider purchasing in future.",
-        "visualization": "Recharts BarChart (two grouped Bar series)",
-        "dataSource": "usageConsiderationData[]",
-        "fields": [
-          {
-            "name": "segment",
-            "type": "string",
-            "description": "Age demographic segment displayed on the X-axis.",
-            "example": "25–34"
-          },
-          {
-            "name": "usage",
-            "type": "number",
-            "description": "Percentage of this age segment that currently uses the brand's products/services.",
-            "example": 58,
-            "unit": "%"
-          },
-          {
-            "name": "consideration",
-            "type": "number",
-            "description": "Percentage of this age segment that would consider purchasing the brand in the future.",
-            "example": 74,
-            "unit": "%"
-          }
-        ]
-      },
-
-      {
-        "id": "brand_associations_positioning",
-        "title": "Brand Associations & Positioning",
-        "description": "Radar (spider) chart plotting your brand score against the top competitor across six brand attribute dimensions.",
-        "visualization": "Recharts RadarChart (two Radar series)",
-        "dataSource": "associationData[]",
-        "fields": [
-          {
-            "name": "attribute",
-            "type": "string",
-            "description": "Brand attribute dimension shown on the radar axis label.",
-            "example": "Quality",
-            "enum": ["Quality", "Innovation", "Trust", "Value", "Sustain.", "Support"]
-          },
-          {
-            "name": "brand",
-            "type": "number",
-            "description": "Score for BrandPulse (your brand) on this attribute, from consumer perception research.",
-            "example": 82,
-            "unit": "score (0–100)"
-          },
-          {
-            "name": "competitor",
-            "type": "number",
-            "description": "Score for the top competitor on this attribute.",
-            "example": 75,
-            "unit": "score (0–100)"
-          }
-        ]
-      },
-
-      {
-        "id": "customer_loyalty_nps",
-        "title": "Customer Loyalty & Advocacy",
-        "description": "Net Promoter Score (NPS) panel showing the composite score, a color-coded stacked bar, and the underlying promoter / passive / detractor percentage breakdown.",
-        "visualization": "Large score display + stacked bar (inline CSS) + stat tiles",
-        "dataSource": "npsScore (number) + npsBreakdown[]",
-        "fields": {
-          "npsScore": {
-            "type": "number",
-            "description": "Composite NPS = Promoters% − Detractors%. Ranges from −100 to 100. Displayed as the hero number.",
-            "example": 58,
-            "formula": "Promoters% - Detractors%"
-          },
-          "npsBreakdown": [
-            {
-              "name": "name",
-              "type": "string",
-              "description": "NPS respondent category.",
-              "example": "Promoters",
-              "enum": ["Promoters", "Passives", "Detractors"]
-            },
-            {
-              "name": "value",
-              "type": "number",
-              "description": "Percentage of total survey respondents in this category.",
-              "example": 68,
-              "unit": "%"
-            },
-            {
-              "name": "color",
-              "type": "string",
-              "description": "HSL color used for this segment in the stacked bar.",
-              "example": "hsl(172, 80%, 42%)"
+    "brand_awareness": {
+      "type": "object",
+      "description": "Data for the Brand Awareness funnel section. The funnel has four stages that must decrease: 100 → aided_recognition → unaided_recall → top_of_mind. aided_recognition must match kpi_cards[Brand Awareness].value.",
+      "required": ["funnel", "summary"],
+      "properties": {
+        "funnel": {
+          "type": "array",
+          "description": "Exactly four funnel stages rendered as animated horizontal bars of decreasing width.",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["label", "value", "bar"],
+            "properties": {
+              "label": {
+                "type": "string",
+                "description": "Funnel stage name. Must be one of the four fixed values in order.",
+                "enum": ["Target Audience", "Aided Recognition", "Unaided Recall", "Top-of-Mind"]
+              },
+              "value": {
+                "type": "number",
+                "description": "Percentage at this funnel stage. Target Audience is always 100. Aided Recognition: 50–90. Unaided Recall: 20–60 (must be less than Aided Recognition). Top-of-Mind: 5–35 (must be less than Unaided Recall).",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "bar": {
+                "type": "string",
+                "description": "Tailwind CSS class for the bar fill. Use these fixed values in order: 'bg-secondary', 'bg-primary/40', 'bg-primary/70', 'bg-gradient-primary'. Do not change these.",
+                "enum": ["bg-secondary", "bg-primary/40", "bg-primary/70", "bg-gradient-primary"]
+              }
             }
-          ]
+          }
         },
-        "metadata": {
-          "survey_responses": 3241,
-          "update_frequency": "monthly",
-          "industry_average_nps": 32
-        }
-      },
-
-      {
-        "id": "competitor_tracking",
-        "title": "Competitor Tracking",
-        "description": "Three-part section: a multi-line brand score trend chart, a share-of-voice donut chart, and a full comparison table across all tracked competitors.",
-        "subsections": {
-
-          "brand_score_trend": {
-            "title": "Brand Score Over Time",
-            "description": "Line chart showing monthly brand score (0–100) for your brand and three competitors over seven months. Your brand is solid-lined; competitors use dashed lines.",
-            "visualization": "Recharts LineChart (four Line series)",
-            "dataSource": "competitorTrendData[]",
-            "fields": [
-              {
-                "name": "month",
+        "summary": {
+          "type": "array",
+          "description": "Three stat tiles shown beneath the funnel bars. Values must exactly match the corresponding funnel entries for Aided Recognition, Unaided Recall, and Top-of-Mind.",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["label", "value", "sub"],
+            "properties": {
+              "label": {
                 "type": "string",
-                "description": "Abbreviated month label for the X-axis.",
-                "example": "Jan"
+                "description": "Stat label displayed under the value.",
+                "enum": ["Aided Recognition", "Unaided Recall", "Top-of-Mind"]
               },
-              {
-                "name": "brandpulse",
-                "type": "number",
-                "description": "BrandPulse brand score for this month.",
-                "example": 87,
-                "unit": "score (0–100)"
+              "value": {
+                "type": "string",
+                "description": "Formatted percentage string matching the funnel value (e.g. '78%')."
               },
-              {
-                "name": "brandwatch",
-                "type": "number",
-                "description": "Brandwatch brand score for this month.",
-                "example": 79,
-                "unit": "score (0–100)"
-              },
-              {
-                "name": "sprout",
-                "type": "number",
-                "description": "Sprout Social brand score for this month.",
-                "example": 74,
-                "unit": "score (0–100)"
-              },
-              {
-                "name": "hootsuite",
-                "type": "number",
-                "description": "Hootsuite brand score for this month.",
-                "example": 71,
-                "unit": "score (0–100)"
+              "sub": {
+                "type": "string",
+                "description": "Short explanatory phrase shown under the label. Keep under 35 characters. E.g. 'know brand when prompted', 'recall brand spontaneously', 'first brand recalled'."
               }
-            ]
-          },
-
-          "share_of_voice": {
-            "title": "Share of Voice",
-            "description": "Donut chart showing each brand's proportion of total monitored mentions across all channels.",
-            "visualization": "Recharts PieChart (innerRadius donut)",
-            "dataSource": "shareOfVoice[]",
-            "fields": [
-              {
-                "name": "name",
-                "type": "string",
-                "description": "Brand name.",
-                "example": "BrandPulse"
-              },
-              {
-                "name": "value",
-                "type": "number",
-                "description": "This brand's percentage of total cross-competitor mention volume.",
-                "example": 38,
-                "unit": "% (all values sum to 100)"
-              },
-              {
-                "name": "color",
-                "type": "string",
-                "description": "HSL color used for this brand's donut segment and legend.",
-                "example": "hsl(172, 80%, 42%)"
-              }
-            ]
-          },
-
-          "competitor_snapshot_table": {
-            "title": "Competitor Snapshot",
-            "description": "Side-by-side comparison table with one row per brand. The first row is always your own brand (highlighted with a 'You' badge).",
-            "visualization": "HTML table",
-            "dataSource": "competitors[]",
-            "fields": [
-              {
-                "name": "name",
-                "type": "string",
-                "description": "Brand name.",
-                "example": "BrandPulse"
-              },
-              {
-                "name": "score",
-                "type": "number",
-                "description": "Composite brand health score.",
-                "example": 87,
-                "unit": "score (0–100)"
-              },
-              {
-                "name": "mentions",
-                "type": "number",
-                "description": "Total brand mentions in the current period.",
-                "example": 12483,
-                "unit": "count"
-              },
-              {
-                "name": "sentiment",
-                "type": "number",
-                "description": "Positive sentiment percentage across all monitored sources.",
-                "example": 92,
-                "unit": "%"
-              },
-              {
-                "name": "nps",
-                "type": "number",
-                "description": "Net Promoter Score for this brand.",
-                "example": 58,
-                "unit": "score (−100 to 100)"
-              },
-              {
-                "name": "awareness",
-                "type": "number",
-                "description": "Aided brand awareness percentage among the target market.",
-                "example": 78,
-                "unit": "%"
-              },
-              {
-                "name": "change",
-                "type": "number",
-                "description": "Month-over-month change in brand score. Positive = improvement (green arrow up), negative = decline (red arrow down).",
-                "example": 4.2,
-                "unit": "%"
-              },
-              {
-                "name": "color",
-                "type": "string",
-                "description": "HSL color used as the brand's color indicator dot in the table and charts.",
-                "example": "hsl(172, 80%, 42%)"
-              }
-            ]
+            }
           }
         }
-      },
+      }
+    },
 
-      {
-        "id": "seo_performance",
-        "title": "SEO Performance",
-        "description": "Three-part section covering organic traffic trends, SEO health KPIs, and a ranked keyword table.",
-        "subsections": {
-
-          "organic_traffic_trend": {
-            "title": "Organic Traffic Trend",
-            "description": "Dual area chart splitting monthly organic sessions into branded (users who searched for your brand by name) and non-branded (users who found you via generic category keywords).",
-            "visualization": "Recharts AreaChart (two Area series)",
-            "dataSource": "seoTrafficData[]",
-            "fields": [
-              {
-                "name": "month",
-                "type": "string",
-                "description": "Abbreviated month label for the X-axis.",
-                "example": "Jan"
-              },
-              {
-                "name": "branded",
-                "type": "number",
-                "description": "Monthly organic sessions driven by branded search queries (e.g. 'BrandPulse', 'BrandPulse pricing').",
-                "example": 18000,
-                "unit": "sessions"
-              },
-              {
-                "name": "nonBranded",
-                "type": "number",
-                "description": "Monthly organic sessions driven by generic/category search queries (e.g. 'brand tracking software').",
-                "example": 24000,
-                "unit": "sessions"
-              }
-            ]
+    "platform_sentiment": {
+      "type": "array",
+      "description": "Per-source sentiment breakdown rendered as stacked horizontal bars. Each row must have positive + neutral + negative = 100. Include 3–5 sources. Survey sentiment is typically the most positive; News is often the most neutral.",
+      "minItems": 3,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["platform", "positive", "neutral", "negative"],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "Data source name displayed as the row label.",
+            "enum": ["Social Media", "Reviews", "Surveys", "News", "Forums", "Video"]
           },
-
-          "seo_health_kpis": {
-            "title": "SEO Health",
-            "description": "Four static KPI cards summarising the brand's SEO authority and index footprint.",
-            "visualization": "Stat cards with icon, value, sub-label, and change badge",
-            "fields": [
-              {
-                "name": "domainAuthority",
-                "type": "number",
-                "description": "Moz/Ahrefs-style domain authority score (0–100) indicating overall link equity and trustworthiness.",
-                "value": 68,
-                "change": "+3 pts",
-                "unit": "score (0–100)"
-              },
-              {
-                "name": "backlinks",
-                "type": "string",
-                "description": "Total number of referring domains linking to the site. Displayed in abbreviated form.",
-                "value": "14.2k",
-                "change": "+840"
-              },
-              {
-                "name": "keywordsInTop10",
-                "type": "number",
-                "description": "Number of keywords for which the brand ranks in positions 1–10 on Google.",
-                "value": 284,
-                "change": "+31",
-                "unit": "keywords"
-              },
-              {
-                "name": "indexedPages",
-                "type": "number",
-                "description": "Total number of site pages currently indexed by Google.",
-                "value": 847,
-                "change": "+22",
-                "unit": "pages"
-              }
-            ]
+          "positive": {
+            "type": "number",
+            "description": "Percentage of responses/mentions from this source classified as positive. Must satisfy: positive + neutral + negative = 100.",
+            "minimum": 10,
+            "maximum": 95
           },
-
-          "top_keywords_table": {
-            "title": "Top Ranking Keywords",
-            "description": "Table of the brand's highest-value ranking keywords, sorted by estimated organic traffic. Position badges are highlighted for top-3 rankings.",
-            "visualization": "HTML table with position badge and directional change indicator",
-            "dataSource": "topKeywords[]",
-            "fields": [
-              {
-                "name": "keyword",
-                "type": "string",
-                "description": "The search query for which the brand ranks.",
-                "example": "brand tracking software"
-              },
-              {
-                "name": "position",
-                "type": "number",
-                "description": "Current Google organic ranking position (1 = top result). Positions 1–3 are highlighted in the UI.",
-                "example": 1,
-                "unit": "rank (lower is better)"
-              },
-              {
-                "name": "change",
-                "type": "number",
-                "description": "Change in position since last period. Positive = moved up (improved), negative = moved down (declined), 0 = unchanged. Note: lower position number = higher ranking, so +3 means gained 3 spots.",
-                "example": 3,
-                "unit": "positions"
-              },
-              {
-                "name": "volume",
-                "type": "number",
-                "description": "Average monthly Google search volume for this keyword.",
-                "example": 8400,
-                "unit": "searches/month"
-              },
-              {
-                "name": "traffic",
-                "type": "number",
-                "description": "Estimated monthly organic sessions driven by this keyword based on position CTR and search volume.",
-                "example": 4200,
-                "unit": "sessions/month"
-              }
-            ]
+          "neutral": {
+            "type": "number",
+            "description": "Percentage classified as neutral. Must satisfy: positive + neutral + negative = 100.",
+            "minimum": 3,
+            "maximum": 60
+          },
+          "negative": {
+            "type": "number",
+            "description": "Percentage classified as negative. Must satisfy: positive + neutral + negative = 100.",
+            "minimum": 1,
+            "maximum": 40
           }
         }
-      },
+      }
+    },
 
-      {
-        "id": "live_mentions_feed",
-        "title": "Live Mentions",
-        "description": "Chronological feed of the most recent brand mentions detected across monitored platforms. Animated in staggered sequence on load.",
-        "visualization": "List of mention cards with platform avatar, sentiment badge, and truncated text",
-        "dataSource": "recentMentions[]",
-        "fields": [
-          {
-            "name": "platform",
+    "usage_consideration": {
+      "type": "array",
+      "description": "Grouped bar chart comparing current brand usage vs. future purchase consideration across age segments. Consideration is always >= usage for each segment (people consider before they buy). Include 4–6 age segments covering the brand's target demographic.",
+      "minItems": 4,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "required": ["segment", "usage", "consideration"],
+        "properties": {
+          "segment": {
             "type": "string",
-            "description": "Platform or channel where the mention was detected.",
-            "example": "Twitter/X",
-            "enum": ["Twitter/X", "LinkedIn", "Reddit", "Google", "Instagram", "News"]
+            "description": "Age group label shown on the bar chart X-axis. Use standard ranges: '18–24', '25–34', '35–44', '45–54', '55+'. Omit segments irrelevant to the brand's audience."
           },
-          {
-            "name": "user",
-            "type": "string",
-            "description": "Username, handle, or display name of the person who made the mention.",
-            "example": "@techcrunch"
+          "usage": {
+            "type": "number",
+            "description": "Percentage of this age segment that currently uses the brand. Must be less than or equal to consideration. Typically peaks in the brand's core demographic.",
+            "minimum": 1,
+            "maximum": 90
           },
-          {
-            "name": "text",
+          "consideration": {
+            "type": "number",
+            "description": "Percentage of this age segment that would consider purchasing the brand. Always >= usage. A healthy brand has consideration at least 15 points above usage.",
+            "minimum": 5,
+            "maximum": 95
+          }
+        }
+      }
+    },
+
+    "brand_associations": {
+      "type": "array",
+      "description": "Six attribute scores for the radar chart comparing your brand vs. the primary competitor. Choose attributes relevant to the brand's industry. Your brand should lead on some attributes and trail on others to create a realistic, non-trivial chart.",
+      "minItems": 5,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["attribute", "brand", "competitor"],
+        "properties": {
+          "attribute": {
             "type": "string",
-            "description": "Full text of the mention. Truncated with CSS ellipsis in the card.",
-            "example": "BrandPulse is revolutionizing how companies track their online reputation..."
+            "description": "Brand attribute label shown on the radar axis. Keep under 10 characters so it fits the chart. Common options: 'Quality', 'Innovation', 'Trust', 'Value', 'Sustain.', 'Support', 'Speed', 'Design', 'Price'. Pick attributes that matter in the brand's industry."
           },
-          {
-            "name": "sentiment",
+          "brand": {
+            "type": "number",
+            "description": "Your brand's consumer perception score on this attribute (0–100). Scores 60–90 indicate competitive strength; below 60 is a weakness. Not all attributes should be above the competitor.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "competitor": {
+            "type": "number",
+            "description": "Primary competitor's score on this attribute (0–100). Should differ from 'brand' by at least 5 points on most attributes to create meaningful visual spread on the radar.",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      }
+    },
+
+    "nps": {
+      "type": "object",
+      "description": "Net Promoter Score data. The score field MUST equal breakdown[Promoters].value minus breakdown[Detractors].value. Industry benchmarks: SaaS ~35, Retail ~45, Healthcare ~27, Financial Services ~34.",
+      "required": ["score", "breakdown", "survey_responses", "industry_average"],
+      "properties": {
+        "score": {
+          "type": "number",
+          "description": "Composite NPS = Promoters% − Detractors%. Must be mathematically consistent with breakdown. Displayed as the large hero number. Range −100 to 100; above 50 is excellent.",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "breakdown": {
+          "type": "array",
+          "description": "Exactly three NPS segments in order: Promoters, Passives, Detractors. Values must sum to 100.",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["name", "value", "color"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "NPS respondent group name.",
+                "enum": ["Promoters", "Passives", "Detractors"]
+              },
+              "value": {
+                "type": "number",
+                "description": "Percentage of survey respondents in this group. Promoters + Passives + Detractors must equal 100. Promoters (score 9–10): typically 40–70%. Passives (score 7–8): 15–35%. Detractors (score 0–6): 5–25%.",
+                "minimum": 1,
+                "maximum": 90
+              },
+              "color": {
+                "type": "string",
+                "description": "HSL color for the stacked bar segment. Use fixed values: 'hsl(172, 80%, 42%)' for Promoters, 'hsl(222, 25%, 38%)' for Passives, 'hsl(0, 72%, 51%)' for Detractors. Do not change these."
+              }
+            }
+          }
+        },
+        "survey_responses": {
+          "type": "number",
+          "description": "Total number of survey respondents used to calculate NPS. Should be a believable sample for the brand's size: small brand 200–1000, mid-market 1000–5000, enterprise 5000–50000.",
+          "minimum": 50
+        },
+        "industry_average": {
+          "type": "number",
+          "description": "The typical NPS for the brand's industry, displayed as the benchmark in the UI ('industry avg: X'). Use a realistic published benchmark for the industry specified in meta.industry.",
+          "minimum": -20,
+          "maximum": 80
+        }
+      }
+    },
+
+    "competitors": {
+      "type": "array",
+      "description": "Competitor tracking data. First entry (index 0) is always the client brand with is_client: true. Remaining entries are real or plausible competitors in the same market. Include 3–5 total entries. The client brand should rank #1 on score for an aspirational scenario, but realism is preferred — competitors can lead on some metrics.",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["name", "score", "mentions", "sentiment", "nps", "awareness", "change", "color", "is_client"],
+        "properties": {
+          "name": {
             "type": "string",
-            "description": "AI-classified sentiment of the mention.",
-            "example": "positive",
+            "description": "Brand or company name. For is_client: true, use meta.brand_name. For competitors, use real or plausible competitor names in the brand's industry."
+          },
+          "score": {
+            "type": "number",
+            "description": "Composite brand health score (0–100). For is_client: true, must match kpi_cards[Brand Score].value.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "mentions": {
+            "type": "number",
+            "description": "Total brand mentions in the current month. For is_client: true, use the last value in trend[].mentions. Competitors should have plausibly different volumes.",
+            "minimum": 100
+          },
+          "sentiment": {
+            "type": "number",
+            "description": "Positive sentiment percentage (0–100). For is_client: true, must match kpi_cards[Positive Sentiment].value.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "nps": {
+            "type": "number",
+            "description": "Net Promoter Score. For is_client: true, must match nps.score.",
+            "minimum": -100,
+            "maximum": 100
+          },
+          "awareness": {
+            "type": "number",
+            "description": "Aided brand awareness percentage. For is_client: true, must match kpi_cards[Brand Awareness].value.",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "change": {
+            "type": "number",
+            "description": "Month-over-month brand score change. Positive = improving. Negative = declining. For is_client: true, must match kpi_cards[Brand Score].change.",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "color": {
+            "type": "string",
+            "description": "HSL color used for this brand's line in the trend chart and dot in the table. Use 'hsl(172, 80%, 42%)' for is_client brand. Assign distinct colours to each competitor: e.g. 'hsl(260, 60%, 55%)', 'hsl(38, 92%, 50%)', 'hsl(200, 80%, 50%)'."
+          },
+          "is_client": {
+            "type": "boolean",
+            "description": "True only for the first entry (the brand being analysed). Controls the 'You' badge and highlighted row styling in the table."
+          },
+          "trend": {
+            "type": "array",
+            "description": "Seven monthly brand score values for the line chart. Must cover the same months as the root trend array. Values should show a realistic trajectory. For is_client: true, the last value must equal score.",
+            "minItems": 7,
+            "maxItems": 7,
+            "items": {
+              "type": "number",
+              "description": "Brand score for this month (0–100).",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        }
+      }
+    },
+
+    "share_of_voice": {
+      "type": "array",
+      "description": "Mention share distribution across all tracked brands for the Share of Voice donut chart. Must include the same brands as competitors[] in the same order. Values must sum to 100.",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["name", "value", "color"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Brand name. Must match the corresponding entry in competitors[].name."
+          },
+          "value": {
+            "type": "number",
+            "description": "Percentage share of total cross-brand mentions. All values must sum to 100. The client brand typically holds the largest or second-largest share.",
+            "minimum": 1,
+            "maximum": 80
+          },
+          "color": {
+            "type": "string",
+            "description": "HSL color. Must exactly match the color used in the corresponding competitors[] entry."
+          }
+        }
+      }
+    },
+
+    "seo": {
+      "type": "object",
+      "description": "SEO performance data for the SEO Performance dashboard section.",
+      "required": ["traffic_trend", "health_kpis", "top_keywords"],
+      "properties": {
+
+        "traffic_trend": {
+          "type": "array",
+          "description": "Seven monthly data points for the Organic Traffic Trend area chart, covering the same months as the root trend array. Branded + nonBranded shows total organic sessions. Values should trend upward with realistic monthly variance (±10–25%).",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "type": "object",
+            "required": ["month", "branded", "nonBranded"],
+            "properties": {
+              "month": {
+                "type": "string",
+                "description": "Abbreviated 3-letter month label matching the corresponding entry in the root trend array."
+              },
+              "branded": {
+                "type": "number",
+                "description": "Monthly sessions from branded queries (users who searched for the brand by name). Usually 30–50% of total organic traffic. Should grow as brand awareness grows.",
+                "minimum": 100
+              },
+              "nonBranded": {
+                "type": "number",
+                "description": "Monthly sessions from generic/category queries. Usually larger than branded and more volatile. Grows as the brand ranks for more category keywords.",
+                "minimum": 100
+              }
+            }
+          }
+        },
+
+        "health_kpis": {
+          "type": "object",
+          "description": "Four snapshot SEO health metrics displayed as stat cards. Calibrate to the brand's size: small brands have lower DA (20–40), fewer backlinks, fewer indexed pages.",
+          "required": ["domain_authority", "backlinks", "keywords_in_top10", "indexed_pages"],
+          "properties": {
+            "domain_authority": {
+              "type": "object",
+              "description": "Moz/Ahrefs Domain Authority score reflecting overall link equity. Displayed as 'X / 100'.",
+              "required": ["value", "change"],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "description": "Current DA score (1–100). New/small sites: 10–30. Growing brands: 30–60. Established brands: 60–90.",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                "change": {
+                  "type": "string",
+                  "description": "Change label displayed on the stat card badge (e.g. '+3 pts', '-1 pt', '+0 pts')."
+                }
+              }
+            },
+            "backlinks": {
+              "type": "object",
+              "description": "Total referring domains pointing to the site. Displayed in abbreviated form (e.g. '14.2k').",
+              "required": ["value", "display", "change"],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "description": "Raw backlink count. Small brand: 500–5000. Mid-market: 5000–50000. Enterprise: 50000+.",
+                  "minimum": 10
+                },
+                "display": {
+                  "type": "string",
+                  "description": "Human-readable abbreviated form shown in the UI (e.g. '14.2k', '2.1k', '183k')."
+                },
+                "change": {
+                  "type": "string",
+                  "description": "Change label for the stat badge (e.g. '+840', '+120', '-22')."
+                }
+              }
+            },
+            "keywords_in_top10": {
+              "type": "object",
+              "description": "Number of keywords for which the brand ranks in Google positions 1–10.",
+              "required": ["value", "change"],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "description": "Current count of top-10 ranking keywords. Small brand: 10–100. Mid-market: 100–500. Enterprise: 500–5000.",
+                  "minimum": 0
+                },
+                "change": {
+                  "type": "string",
+                  "description": "Change label (e.g. '+31', '+8', '-5')."
+                }
+              }
+            },
+            "indexed_pages": {
+              "type": "object",
+              "description": "Total pages currently indexed by Google. Reflects the brand's content footprint.",
+              "required": ["value", "change"],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "description": "Current indexed page count. Blog-heavy brands: higher. SaaS landing-page sites: lower.",
+                  "minimum": 1
+                },
+                "change": {
+                  "type": "string",
+                  "description": "Change label (e.g. '+22', '+140', '-3')."
+                }
+              }
+            }
+          }
+        },
+
+        "top_keywords": {
+          "type": "array",
+          "description": "5–8 keywords the brand ranks for, shown in the keyword table. Include a mix of branded and category keywords. Sort by estimated traffic descending. Positions 1–3 are highlighted in the UI.",
+          "minItems": 4,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "required": ["keyword", "position", "change", "volume", "traffic"],
+            "properties": {
+              "keyword": {
+                "type": "string",
+                "description": "The search query. Mix branded terms (containing the brand name) and category terms. Keep under 50 characters."
+              },
+              "position": {
+                "type": "number",
+                "description": "Current Google ranking position. Lower is better. Positions 1–3 receive gold badge styling. Include a spread: some top-3, some mid-page (4–10), maybe one beyond 10.",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "change": {
+                "type": "number",
+                "description": "Change in ranking position since last period. Positive means the brand moved UP (improved). Negative means it moved DOWN (declined). 0 means no change. E.g. +3 means gained 3 spots.",
+                "minimum": -15,
+                "maximum": 15
+              },
+              "volume": {
+                "type": "number",
+                "description": "Average monthly Google search volume for this keyword. Higher-position keywords should generally have higher volume.",
+                "minimum": 10
+              },
+              "traffic": {
+                "type": "number",
+                "description": "Estimated monthly organic sessions from this keyword. Approximate using position CTR: position 1 ~50% CTR, position 2 ~28%, position 3 ~15%, positions 4–10 ~5–10%, beyond 10 ~1–3%.",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "mentions": {
+      "type": "array",
+      "description": "Live mention feed items displayed in the real-time section. Generate 4–6 recent mentions that feel authentic — vary platforms, sentiment, and type of commenter (journalists, users, influencers). Mention text must reference meta.brand_name naturally.",
+      "minItems": 3,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["platform", "user", "text", "sentiment", "time"],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "Platform where the mention was detected. Choose from common platforms relevant to the brand's industry.",
+            "enum": ["Twitter/X", "LinkedIn", "Reddit", "Google", "Instagram", "News", "YouTube", "TikTok"]
+          },
+          "user": {
+            "type": "string",
+            "description": "Username or display name of the author. Use realistic handles: '@handle' format for Twitter/X, full names for LinkedIn, 'u/handle' for Reddit, first name + last initial for review sites."
+          },
+          "text": {
+            "type": "string",
+            "description": "The mention content. Must feel authentic to the platform's style and mention meta.brand_name. Keep 10–25 words. Match the sentiment field — positive text should not contain complaints.",
+            "minLength": 20,
+            "maxLength": 200
+          },
+          "sentiment": {
+            "type": "string",
+            "description": "Sentiment classification. Distribute roughly according to sentiment_overview percentages — most mentions should be positive or neutral.",
             "enum": ["positive", "neutral", "negative"]
           },
-          {
-            "name": "time",
+          "time": {
             "type": "string",
-            "description": "Human-readable relative timestamp of the mention.",
-            "example": "2m ago"
+            "description": "Human-readable relative timestamp. Recent items come first. Use formats like '2m ago', '18m ago', '1h ago', '3h ago', '1d ago'."
           }
-        ]
-      },
+        }
+      }
+    },
 
-      {
-        "id": "ai_suggestions",
-        "title": "AI Recommendations",
-        "description": "Grid of AI-generated action cards ranked by priority. Clicking a card expands it and triggers a character-by-character typing animation on the description text.",
-        "visualization": "Expandable cards (framer-motion AnimatePresence) with typing effect",
-        "dataSource": "suggestions[] (AISuggestionsPanel.tsx)",
-        "fields": [
-          {
-            "name": "priority",
+    "ai_suggestions": {
+      "type": "array",
+      "description": "Four AI-generated recommendation cards displayed in the AI Recommendations panel. Must include exactly one of each priority level: critical, high, medium, low. Each suggestion should be specific to the brand's data — reference actual metrics, platforms, or competitor gaps visible elsewhere in the dashboard.",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["priority", "icon", "title", "description", "impact", "impact_color", "action"],
+        "properties": {
+          "priority": {
             "type": "string",
-            "description": "Urgency level of the recommendation. Controls border color, badge color, and glow effect.",
-            "example": "critical",
+            "description": "Urgency level. Determines badge colour and card border styling. Use each value exactly once across the four cards.",
             "enum": ["critical", "high", "medium", "low"]
           },
-          {
-            "name": "icon",
-            "type": "LucideIcon",
-            "description": "Lucide icon rendered inside the priority badge.",
-            "example": "Zap"
-          },
-          {
-            "name": "title",
+          "icon": {
             "type": "string",
-            "description": "Short headline for the recommendation.",
-            "example": "Capitalize on Viral Mention"
+            "description": "Lucide icon name representing the type of action. Choose from: 'Zap' (urgent/viral), 'Target' (strategy/positioning), 'MessageSquare' (reviews/responses), 'TrendingUp' (growth/content), 'Search' (SEO), 'Trophy' (competitive).",
+            "enum": ["Zap", "Target", "MessageSquare", "TrendingUp", "Search", "Trophy"]
           },
-          {
-            "name": "description",
+          "title": {
             "type": "string",
-            "description": "Detailed explanation of the insight and recommended action. Revealed with a typing animation when the card is expanded.",
-            "example": "Tech influencer @sarahdev (450K followers) mentioned your product positively 2 hours ago..."
+            "description": "Short action-oriented headline under 50 characters. Start with a verb or the key topic. Be specific — reference a platform, competitor, or metric where possible.",
+            "maxLength": 60
           },
-          {
-            "name": "impact",
+          "description": {
             "type": "string",
-            "description": "Projected impact metric displayed in the top-right corner of the card.",
-            "example": "+25K reach"
+            "description": "Full recommendation paragraph revealed on card expand with a typing animation. 40–80 words. Include: what the data shows, why it matters, a specific recommended action, and a projected outcome. Reference real figures from the dashboard data where possible.",
+            "minLength": 50,
+            "maxLength": 400
           },
-          {
-            "name": "impactColor",
+          "impact": {
             "type": "string",
-            "description": "Tailwind CSS class controlling the color of the impact label.",
-            "example": "text-primary",
+            "description": "Projected impact label shown top-right of the card. Keep concise (e.g. '+25K reach', '+12% sentiment', '3x engagement', '+8 NPS pts').",
+            "maxLength": 20
+          },
+          "impact_color": {
+            "type": "string",
+            "description": "Tailwind text class for the impact label colour. Use 'text-primary' for reach/visibility gains, 'text-gradient-warm' for sentiment/NPS improvements, 'text-gradient-accent' for engagement/content opportunities.",
             "enum": ["text-primary", "text-gradient-warm", "text-gradient-accent"]
           },
-          {
-            "name": "action",
+          "action": {
             "type": "string",
-            "description": "Label for the CTA button at the bottom of the card.",
-            "example": "Engage Now"
+            "description": "CTA button label. Keep under 20 characters. Examples: 'Engage Now', 'View Strategy', 'Review Drafts', 'See Playbook', 'Fix Now', 'Explore Gap'.",
+            "maxLength": 20
           }
-        ]
+        }
       }
+    }
 
-    ]
   }
 }
