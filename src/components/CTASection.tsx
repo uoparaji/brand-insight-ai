@@ -21,7 +21,7 @@ const CTASection = () => {
           Join thousands of brands already using BrandPulse to dominate their online presence.
         </p>
         <Button variant="hero" size="lg" className="text-lg px-12 h-14" asChild>
-          <Link to="/dashboard">
+          <Link to="/onboarding">
             Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
         </Button>
