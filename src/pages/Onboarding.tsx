@@ -13,6 +13,8 @@ import {
   Sparkles,
   Activity,
   Check,
+  Plus,
+  X,
 } from "lucide-react";
 import AmbientParticles from "@/components/AmbientParticles";
 
@@ -60,16 +62,10 @@ const steps: StepConfig[] = [
     id: "competitors",
     icon: <Users className="h-6 w-6" />,
     label: "Competitors",
-    title: "Who are your top competitors?",
-    subtitle: "Enter up to 3 competitors. We'll compare brand scores, sentiment, and share of voice.",
-    placeholder: "",
+    title: "Who are your competitors?",
+    subtitle: "Add as many competitors as you'd like. We'll compare brand scores, sentiment, and share of voice.",
+    placeholder: "e.g. Brandwatch",
     type: "multi-input",
-    multiCount: 3,
-    multiPlaceholders: [
-      "Competitor 1 (e.g. Brandwatch)",
-      "Competitor 2 (e.g. Sprout Social)",
-      "Competitor 3 (e.g. Hootsuite)",
-    ],
   },
   {
     id: "description",
@@ -87,7 +83,7 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [inputValue, setInputValue] = useState("");
-  const [multiValues, setMultiValues] = useState<string[]>(["", "", ""]);
+  const [multiValues, setMultiValues] = useState<string[]>([""]);
   const [direction, setDirection] = useState(1);
   const [isCompleting, setIsCompleting] = useState(false);
 
@@ -113,7 +109,7 @@ const Onboarding = () => {
       setDirection(1);
       setCurrentStep((s) => s + 1);
       setInputValue("");
-      setMultiValues(["", "", ""]);
+      setMultiValues([""]);
     } else {
       setIsCompleting(true);
       setTimeout(() => navigate("/dashboard"), 2000);
@@ -279,22 +275,47 @@ const Onboarding = () => {
                     className="text-lg bg-secondary/30 border-border/40 focus:border-primary/60 rounded-xl px-5 py-4 placeholder:text-muted-foreground/50 resize-none"
                   />
                 )}
-                {step.type === "multi-input" &&
-                  step.multiPlaceholders?.map((ph, i) => (
-                    <Input
-                      key={i}
-                      autoFocus={i === 0}
-                      value={multiValues[i]}
-                      onChange={(e) => {
-                        const updated = [...multiValues];
-                        updated[i] = e.target.value;
-                        setMultiValues(updated);
-                      }}
-                      onKeyDown={handleKeyDown}
-                      placeholder={ph}
-                      className="h-13 text-base bg-secondary/30 border-border/40 focus:border-primary/60 rounded-xl px-5 placeholder:text-muted-foreground/50"
-                    />
-                  ))}
+                {step.type === "multi-input" && (
+                  <div className="space-y-3">
+                    {multiValues.map((val, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Input
+                          autoFocus={i === multiValues.length - 1}
+                          value={val}
+                          onChange={(e) => {
+                            const updated = [...multiValues];
+                            updated[i] = e.target.value;
+                            setMultiValues(updated);
+                          }}
+                          onKeyDown={handleKeyDown}
+                          placeholder={`Competitor ${i + 1}`}
+                          className="h-13 text-base bg-secondary/30 border-border/40 focus:border-primary/60 rounded-xl px-5 placeholder:text-muted-foreground/50"
+                        />
+                        {multiValues.length > 1 && (
+                          <button
+                            onClick={() => setMultiValues(multiValues.filter((_, j) => j !== i))}
+                            className="shrink-0 h-10 w-10 rounded-lg bg-secondary/40 border border-border/30 flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </motion.div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setMultiValues([...multiValues, ""])}
+                      className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors pt-1"
+                    >
+                      <Plus className="h-4 w-4" /> Add another competitor
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* CTA */}
