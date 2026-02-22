@@ -56,12 +56,12 @@ const HeroSection = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Button variant="hero" size="lg" className="text-base px-10 h-13 text-lg" asChild>
-              <Link to="/dashboard">
+              <Link to="/onboarding">
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button variant="hero-outline" size="lg" className="text-base px-10 h-13 text-lg" asChild>
-              <Link to="/dashboard">
+              <Link to="/onboarding">
                 <Play className="mr-2 h-4 w-4" /> Watch Demo
               </Link>
             </Button>
