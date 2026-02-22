@@ -112,7 +112,7 @@ const Onboarding = () => {
       setMultiValues([""]);
     } else {
       setIsCompleting(true);
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/dashboard", { state: newAnswers }), 2000);
     }
   };
 

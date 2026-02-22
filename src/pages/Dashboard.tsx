@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
+import { useLocation, Link } from "react-router-dom";
 import {
   Activity,
   Bell,
@@ -19,7 +21,6 @@ import {
   ArrowDown,
   Minus,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import {
   AreaChart,
   Area,
@@ -46,6 +47,7 @@ import { type LucideIcon } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 import AISuggestionsPanel from "@/components/AISuggestionsPanel";
 import AmbientParticles from "@/components/AmbientParticles";
+import DashboardChatbot from "@/components/DashboardChatbot";
 
 // ── Existing data ───────────────────────────────────────────────────────────
 
@@ -215,6 +217,54 @@ const tooltipStyle = {
 // ── Component ────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
+  const location = useLocation();
+  const brandState = (location.state as Record<string, string | string[]> | null) || {};
+  
+  const brandName = (brandState.brandName as string) || "BrandPulse";
+  const brandWebsite = (brandState.website as string) || "";
+  const brandIndustry = (brandState.industry as string) || "";
+  const brandCompetitors = (brandState.competitors as string[]) || ["Brandwatch", "Sprout Social", "Hootsuite"];
+  const brandDescription = (brandState.description as string) || "";
+
+  const competitorColors = [
+    "hsl(260, 60%, 55%)",
+    "hsl(38, 92%, 50%)",
+    "hsl(200, 80%, 50%)",
+    "hsl(340, 65%, 55%)",
+    "hsl(150, 60%, 45%)",
+    "hsl(30, 80%, 55%)",
+  ];
+
+  const dynamicCompetitors = useMemo(() => {
+    const all = [
+      { name: brandName, score: 87, mentions: 12483, sentiment: 92, nps: 58, awareness: 78, change: 4.2, color: "hsl(172, 80%, 42%)" },
+      ...brandCompetitors.map((name, i) => ({
+        name,
+        score: Math.max(55, 87 - (i + 1) * Math.floor(Math.random() * 5 + 4)),
+        mentions: Math.floor(Math.random() * 8000 + 4000),
+        sentiment: Math.max(60, 92 - (i + 1) * Math.floor(Math.random() * 5 + 3)),
+        nps: Math.max(15, 58 - (i + 1) * Math.floor(Math.random() * 8 + 5)),
+        awareness: Math.max(30, 78 - (i + 1) * Math.floor(Math.random() * 8 + 4)),
+        change: parseFloat((Math.random() * 6 - 3).toFixed(1)),
+        color: competitorColors[i % competitorColors.length],
+      })),
+    ];
+    return all;
+  }, [brandName, brandCompetitors]);
+
+  const dynamicShareOfVoice = useMemo(() => {
+    const total = dynamicCompetitors.length;
+    const mainShare = Math.floor(60 / total + 20);
+    const remaining = 100 - mainShare;
+    return dynamicCompetitors.map((c, i) => ({
+      name: c.name,
+      value: i === 0 ? mainShare : Math.floor(remaining / (total - 1)),
+      color: c.color,
+    }));
+  }, [dynamicCompetitors]);
+
+  const brandContext = { brandName, website: brandWebsite, industry: brandIndustry, competitors: brandCompetitors, description: brandDescription };
+
   return (
     <div className="min-h-screen bg-background relative">
       {/* Background ambient */}
@@ -248,7 +298,7 @@ const Dashboard = () => {
               <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gradient-primary ring-2 ring-background" />
             </button>
             <div className="h-9 w-9 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-glow">
-              BP
+              {brandName.slice(0, 2).toUpperCase()}
             </div>
           </div>
         </div>
@@ -263,9 +313,9 @@ const Dashboard = () => {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            Good morning, <span className="text-gradient">Alex</span>
+            Good morning, <span className="text-gradient">{brandName}</span>
           </h1>
-          <p className="text-muted-foreground mt-1">Your brand is performing above average. Here's the latest.</p>
+          <p className="text-muted-foreground mt-1">{brandIndustry ? `${brandIndustry} · ` : ""}Your brand is performing above average. Here's the latest.</p>
         </motion.div>
 
         {/* ── KPI Cards — one per health category ────────────────────────── */}
@@ -638,15 +688,10 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground mt-0.5">Last 7 months</p>
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {[
-                    { label: "BrandPulse",    color: "hsl(172, 80%, 42%)" },
-                    { label: "Brandwatch",    color: "hsl(260, 60%, 55%)" },
-                    { label: "Sprout Social", color: "hsl(38, 92%, 50%)" },
-                    { label: "Hootsuite",     color: "hsl(200, 80%, 50%)" },
-                  ].map((c) => (
-                    <span key={c.label} className="flex items-center gap-1.5">
+                  {dynamicCompetitors.slice(0, 4).map((c) => (
+                    <span key={c.name} className="flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
-                      {c.label}
+                      {c.name}
                     </span>
                   ))}
                 </div>
@@ -676,8 +721,8 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground mb-3">Mention share across channels</p>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
-                  <Pie data={shareOfVoice} cx="50%" cy="50%" innerRadius={45} outerRadius={65} dataKey="value" strokeWidth={0}>
-                    {shareOfVoice.map((entry, i) => (
+                  <Pie data={dynamicShareOfVoice} cx="50%" cy="50%" innerRadius={45} outerRadius={65} dataKey="value" strokeWidth={0}>
+                    {dynamicShareOfVoice.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
@@ -685,7 +730,7 @@ const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2 mt-2">
-                {shareOfVoice.map((s) => (
+                {dynamicShareOfVoice.map((s) => (
                   <div key={s.name} className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       <span className="h-2 w-2 rounded-full shrink-0" style={{ background: s.color }} />
@@ -719,7 +764,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/20">
-                {competitors.map((c, i) => (
+                {dynamicCompetitors.map((c, i) => (
                   <tr key={c.name} className={i === 0 ? "text-foreground" : "text-muted-foreground"}>
                     <td className="py-3 flex items-center gap-2.5">
                       <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: c.color }} />
@@ -929,6 +974,8 @@ const Dashboard = () => {
         {/* AI Suggestions */}
         <AISuggestionsPanel />
       </main>
+
+      <DashboardChatbot brandContext={brandContext} />
     </div>
   );
 };
