@@ -12,9 +12,10 @@ interface MetricCardProps {
   icon: LucideIcon;
   delay?: number;
   format?: (n: number) => string;
+  definition?: string;
 }
 
-const MetricCard = ({ label, value, suffix, prefix, change, icon: Icon, delay = 0, format }: MetricCardProps) => {
+const MetricCard = ({ label, value, suffix, prefix, change, icon: Icon, delay = 0, format, definition }: MetricCardProps) => {
   const { count, ref } = useCountUp(value, 2200);
   const positive = change > 0;
   const [flipped, setFlipped] = useState(false);
@@ -90,6 +91,12 @@ const MetricCard = ({ label, value, suffix, prefix, change, icon: Icon, delay = 
                     {positive ? "+" : ""}{change}%
                   </p>
                 </div>
+                {definition && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">What is this?</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{definition}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Insight</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">{recommendation}</p>

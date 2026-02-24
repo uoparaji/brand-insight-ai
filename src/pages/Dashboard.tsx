@@ -189,14 +189,15 @@ type MetricConfig = {
   change: number;
   icon: LucideIcon;
   format?: (n: number) => string;
+  definition?: string;
 };
 
 const metrics: MetricConfig[] = [
-  { label: "Brand Score",       value: 87, suffix: "/100", change:  4.2, icon: Star },
-  { label: "Brand Awareness",   value: 78, suffix: "%",    change:  6.3, icon: Eye },
-  { label: "NPS Score",         value: 58,                 change:  5.8, icon: Heart },
-  { label: "Positive Sentiment",value: 92, suffix: "%",    change:  2.1, icon: TrendingUp },
-  { label: "Audience Reach",    value: 24, suffix: "M",    change: -3.1, icon: Users },
+  { label: "Brand Score",       value: 87, suffix: "/100", change:  4.2, icon: Star, definition: "An overall health score combining awareness, sentiment, and engagement into a single 0–100 rating." },
+  { label: "Brand Awareness",   value: 78, suffix: "%",    change:  6.3, icon: Eye, definition: "The percentage of your target audience that recognises or recalls your brand without prompting." },
+  { label: "NPS Score",         value: 58,                 change:  5.8, icon: Heart, definition: "Net Promoter Score measures customer loyalty on a –100 to +100 scale based on how likely they are to recommend you." },
+  { label: "Positive Sentiment",value: 92, suffix: "%",    change:  2.1, icon: TrendingUp, definition: "The share of online mentions, reviews, and social posts about your brand that carry a positive tone." },
+  { label: "Audience Reach",    value: 24, suffix: "M",    change: -3.1, icon: Users, definition: "The total number of unique people who have seen your brand content across all channels this month." },
 ];
 
 const sentimentColors: Record<string, string> = {
@@ -331,6 +332,7 @@ const Dashboard = () => {
               icon={m.icon}
               delay={i * 0.1}
               format={m.format}
+              definition={m.definition}
             />
           ))}
         </div>
